@@ -1,0 +1,19 @@
+{
+  "name": "supabase-rest-hooks",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/grind-t/supabase-rest-hooks.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/grind-t/supabase-rest-hooks/issues"
+  },
+  "homepage": "https://github.com/grind-t/supabase-rest-hooks#readme"
+}
