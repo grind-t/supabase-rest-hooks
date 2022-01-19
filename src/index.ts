@@ -10,6 +10,10 @@ export abstract class SupabaseEntity extends Entity {
   static client: SupabaseClient;
   static table: string;
 
+  static get key(): string {
+    return this.table;
+  }
+
   static getColumns<T extends DerivedEntity>(
     this: T,
     instance?: DeepPartial<InstanceType<T>>
