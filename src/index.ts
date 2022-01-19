@@ -1,30 +1,30 @@
+import { DeepPartial } from './utils';
 import { Entity } from '@rest-hooks/endpoint';
 import { SupabaseClient } from '@supabase/supabase-js';
 
 type DerivedEntity = (new () => SupabaseEntity) & typeof SupabaseEntity;
 
+export const includeColumn = undefined;
+
 export abstract class SupabaseEntity extends Entity {
   static client: SupabaseClient;
-  static instance: SupabaseEntity;
   static table: string;
-  static columns: string;
 
-  static getClient() {
-    if (!this.client) throw new Error('missing supabase client');
-    return this.client;
-  }
-
-  static getInstance(this: DerivedEntity) {
-    if (this.instance) return this.instance;
-    this.instance = new this();
-    return this.instance;
-  }
-
-  static getColumns(this: DerivedEntity) {
-    if (this.columns) return this.columns;
-    const instance = this.getInstance();
-    const keys = Object.keys(instance);
-    this.columns = keys.join(',');
-    return this.columns;
+  static getColumns<T extends DerivedEntity>(
+    this: T,
+    instance?: DeepPartial<InstanceType<T>>
+  ): string {
+    const columns = [];
+    for (const [key, value] of Object.entries(instance || this.fromJS())) {
+      if (typeof value === 'function') continue;
+      if (key in this.schema) {
+        const nestedEntity = this.schema[key] as DerivedEntity;
+        const nestedColumns = nestedEntity.getColumns(value);
+        columns.push(`${key}:${nestedEntity.table}(${nestedColumns})`);
+        continue;
+      }
+      columns.push(`${key}`);
+    }
+    return columns.join(',');
   }
 }

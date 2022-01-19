@@ -1,3 +1,9 @@
+export type DeepPartial<T> = T extends object
+  ? {
+      [P in keyof T]?: DeepPartial<T[P]>;
+    }
+  : T;
+
 export function camelCase(snakeCase: string): string {
   const regex = /[_][a-z]/gi;
   return snakeCase

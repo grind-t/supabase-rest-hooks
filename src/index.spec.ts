@@ -1,4 +1,4 @@
-import { SupabaseEntity } from './index';
+import { includeColumn, SupabaseEntity } from './index';
 import { test, expect } from '@jest/globals';
 import { useResource } from '@rest-hooks/core';
 import { Endpoint } from '@rest-hooks/endpoint';
@@ -10,18 +10,32 @@ SupabaseEntity.client = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQyNDM3NjIwLCJleHAiOjE5NTgwMTM2MjB9.QADxCWc94qM5covHkYAg5yDuC7R3JrssIaZLMCxgBGc'
 );
 
-class TodoEntity extends SupabaseEntity {
+class UserEntity extends SupabaseEntity {
   readonly id = 0;
-  readonly title = '';
-  readonly completed = false;
+  readonly name = '';
+
+  static table = 'users';
+
+  pk() {
+    return `${this.id}`;
+  }
+}
+
+class TodoEntity extends SupabaseEntity {
+  readonly id: number = 0;
+  readonly title: string = '';
+  readonly completed: boolean = false;
+  readonly user: UserEntity = UserEntity.fromJS({});
 
   static table = 'todos';
 
+  static schema = { user: UserEntity };
+
   static list = new Endpoint(
     async () => {
-      const client = this.getClient();
-      const columns = this.getColumns();
-      const { data, error } = await client.from(this.table).select(columns);
+      const { data, error } = await this.client
+        .from(this.table)
+        .select(this.getColumns());
       if (error) throw new Error(error.message);
       return data;
     },
@@ -32,6 +46,23 @@ class TodoEntity extends SupabaseEntity {
     return `${this.id}`;
   }
 }
+
+test('get all columns', () => {
+  const actual = TodoEntity.getColumns();
+  const expected = 'id,title,completed,user:users(id,name)';
+  expect(actual).toBe(expected);
+});
+
+test('get partial columns', () => {
+  const actual = TodoEntity.getColumns({
+    id: includeColumn,
+    user: {
+      id: includeColumn,
+    },
+  });
+  const expected = 'id,user:users(id)';
+  expect(actual).toBe(expected);
+});
 
 test('list endpoint', async () => {
   const renderHook = makeRenderRestHook(makeCacheProvider);
