@@ -1,4 +1,4 @@
-import { includeColumn, SupabaseEntity } from './index';
+import { SupabaseEntity, include } from './index';
 import { snakeCase } from './utils';
 import { test, expect } from '@jest/globals';
 import { useResource } from '@rest-hooks/core';
@@ -57,9 +57,9 @@ test('get all columns', () => {
 
 test('get partial columns', () => {
   const actual = TodoEntity.getColumns({
-    id: includeColumn,
+    id: include,
     user: {
-      id: includeColumn,
+      id: include,
     },
   });
   const expected = 'id,user:users(id)';

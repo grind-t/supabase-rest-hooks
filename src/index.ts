@@ -4,7 +4,8 @@ import { SupabaseClient } from '@supabase/supabase-js';
 
 type DerivedEntity = (new () => SupabaseEntity) & typeof SupabaseEntity;
 
-export const includeColumn = undefined;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const include: any = Symbol('include column');
 
 export abstract class SupabaseEntity extends Entity {
   static client: SupabaseClient;
