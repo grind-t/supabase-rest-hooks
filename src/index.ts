@@ -16,7 +16,8 @@ export abstract class SupabaseEntity extends Entity {
 
   static getColumns<T extends DerivedEntity>(
     this: T,
-    instance?: DeepPartial<InstanceType<T>>
+    instance?: DeepPartial<InstanceType<T>>,
+    dbKey?: (key: string) => string
   ): string {
     const columns = [];
     for (const [key, value] of Object.entries(instance || this.fromJS())) {
@@ -27,7 +28,7 @@ export abstract class SupabaseEntity extends Entity {
         columns.push(`${key}:${nestedEntity.table}(${nestedColumns})`);
         continue;
       }
-      columns.push(`${key}`);
+      columns.push(dbKey ? `${key}:${dbKey(key)}` : key);
     }
     return columns.join(',');
   }

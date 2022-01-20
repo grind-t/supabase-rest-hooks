@@ -1,4 +1,5 @@
 import { includeColumn, SupabaseEntity } from './index';
+import { snakeCase } from './utils';
 import { test, expect } from '@jest/globals';
 import { useResource } from '@rest-hooks/core';
 import { Endpoint } from '@rest-hooks/endpoint';
@@ -25,6 +26,7 @@ class TodoEntity extends SupabaseEntity {
   readonly id: number = 0;
   readonly title: string = '';
   readonly completed: boolean = false;
+  readonly userId: number = 0;
   readonly user: UserEntity = UserEntity.fromJS({});
 
   static table = 'todos';
@@ -35,7 +37,7 @@ class TodoEntity extends SupabaseEntity {
     async () => {
       const { data, error } = await this.client
         .from(this.table)
-        .select(this.getColumns());
+        .select(this.getColumns(this.fromJS(), snakeCase));
       if (error) throw new Error(error.message);
       return data;
     },
@@ -49,7 +51,7 @@ class TodoEntity extends SupabaseEntity {
 
 test('get all columns', () => {
   const actual = TodoEntity.getColumns();
-  const expected = 'id,title,completed,user:users(id,name)';
+  const expected = 'id,title,completed,userId,user:users(id,name)';
   expect(actual).toBe(expected);
 });
 
@@ -61,6 +63,15 @@ test('get partial columns', () => {
     },
   });
   const expected = 'id,user:users(id)';
+  expect(actual).toBe(expected);
+});
+
+test('get columns with different case', () => {
+  const actual = TodoEntity.getColumns(
+    { id: undefined, userId: undefined },
+    snakeCase
+  );
+  const expected = 'id:id,userId:user_id';
   expect(actual).toBe(expected);
 });
 
