@@ -11,11 +11,11 @@
   "scripts": {
     "build:esm": "tsc --module es2015 --outDir ./dist/esm",
     "build:cjs": "tsc --module commonjs --outDir ./dist/cjs",
-    "prebuild": "npm run lint && npm run test",
     "build": "npm run build:esm && npm run build:cjs",
     "format": "prettier --write src",
     "lint": "eslint src",
-    "test": "jest"
+    "test": "jest",
+    "prepublishOnly": "npm run lint && npm run test && npm run build"
   },
   "repository": {
     "type": "git",
