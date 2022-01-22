@@ -1,4 +1,4 @@
-import { SupabaseEntity, include } from './index';
+import { SupabaseEntity } from './index';
 import { snakeCase } from './utils';
 import { test, expect } from '@jest/globals';
 import { useResource } from '@rest-hooks/core';
@@ -11,74 +11,59 @@ SupabaseEntity.client = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQyNDM3NjIwLCJleHAiOjE5NTgwMTM2MjB9.QADxCWc94qM5covHkYAg5yDuC7R3JrssIaZLMCxgBGc'
 );
 
-class UserEntity extends SupabaseEntity {
-  readonly id = 0;
-  readonly name = '';
-
-  static table = 'users';
-
-  pk() {
-    return `${this.id}`;
-  }
-}
-
 class TodoEntity extends SupabaseEntity {
   readonly id: number = 0;
   readonly title: string = '';
   readonly completed: boolean = false;
   readonly userId: number = 0;
-  readonly user: UserEntity = UserEntity.fromJS({});
+
+  pk() {
+    return `${this.id}`;
+  }
 
   static table = 'todos';
+}
 
-  static schema = { user: UserEntity };
+class UserEntity extends SupabaseEntity {
+  readonly id = 0;
+  readonly name = '';
+  readonly todos: TodoEntity[] = [];
+
+  pk() {
+    return `${this.id}`;
+  }
+
+  static table = 'users';
+  static schema = { todos: [TodoEntity] };
 
   static list = new Endpoint(
     async () => {
       const { data, error } = await this.client
         .from(this.table)
-        .select(this.getColumns(this.fromJS(), snakeCase));
+        .select(this.getColumns(snakeCase));
       if (error) throw new Error(error.message);
       return data;
     },
     { schema: [this] }
   );
-
-  pk() {
-    return `${this.id}`;
-  }
 }
 
 test('get all columns', () => {
-  const actual = TodoEntity.getColumns();
-  const expected = 'id,title,completed,userId,user:users(id,name)';
-  expect(actual).toBe(expected);
-});
-
-test('get partial columns', () => {
-  const actual = TodoEntity.getColumns({
-    id: include,
-    user: {
-      id: include,
-    },
-  });
-  const expected = 'id,user:users(id)';
+  const actual = UserEntity.getColumns();
+  const expected = 'id,name,todos:todos(id,title,completed,userId)';
   expect(actual).toBe(expected);
 });
 
 test('get columns with different case', () => {
-  const actual = TodoEntity.getColumns(
-    { id: undefined, userId: undefined },
-    snakeCase
-  );
-  const expected = 'id:id,userId:user_id';
+  const actual = TodoEntity.getColumns(snakeCase);
+  const expected = 'id:id,title:title,completed:completed,userId:user_id';
   expect(actual).toBe(expected);
 });
 
 test('list endpoint', async () => {
   const renderHook = makeRenderRestHook(makeCacheProvider);
   const { result, waitForNextUpdate } = renderHook(() =>
-    useResource(TodoEntity.list, {})
+    useResource(UserEntity.list, {})
   );
   await waitForNextUpdate();
   expect(result.current.length).toBeGreaterThan(0);

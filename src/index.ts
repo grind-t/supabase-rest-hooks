@@ -1,11 +1,5 @@
-import { DeepPartial } from './utils';
 import { Entity } from '@rest-hooks/endpoint';
 import { SupabaseClient } from '@supabase/supabase-js';
-
-type DerivedEntity = (new () => SupabaseEntity) & typeof SupabaseEntity;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const include: any = Symbol('include column');
 
 export abstract class SupabaseEntity extends Entity {
   static client: SupabaseClient;
@@ -15,17 +9,18 @@ export abstract class SupabaseEntity extends Entity {
     return this.table;
   }
 
-  static getColumns<T extends DerivedEntity>(
+  static getColumns<T extends typeof SupabaseEntity>(
     this: T,
-    instance?: DeepPartial<InstanceType<T>>,
-    dbKey?: (key: string) => string
+    dbKey?: (entityKey: string) => string
   ): string {
     const columns = [];
-    for (const [key, value] of Object.entries(instance || this.fromJS())) {
-      if (typeof value === 'function') continue;
+    for (const key of Object.keys(this.fromJS())) {
       if (key in this.schema) {
-        const nestedEntity = this.schema[key] as DerivedEntity;
-        const nestedColumns = nestedEntity.getColumns(value);
+        const nestedSchema = this.schema[key];
+        const nestedEntity = (
+          Array.isArray(nestedSchema) ? nestedSchema[0] : nestedSchema
+        ) as typeof SupabaseEntity;
+        const nestedColumns = nestedEntity.getColumns(dbKey);
         columns.push(`${key}:${nestedEntity.table}(${nestedColumns})`);
         continue;
       }
