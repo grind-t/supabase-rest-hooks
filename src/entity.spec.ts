@@ -1,4 +1,4 @@
-import { SupabaseEntity } from './index';
+import { SupabaseEntity } from './entity';
 import { snakeCase } from './utils';
 import { test, expect } from '@jest/globals';
 import { useResource } from '@rest-hooks/core';
