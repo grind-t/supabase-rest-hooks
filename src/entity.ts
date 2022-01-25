@@ -4,15 +4,17 @@ import { Entity, isEntity } from '@rest-hooks/endpoint';
 export type DerivableEntityClass = Constructor<SupabaseEntity> &
   Pick<typeof SupabaseEntity, 'fullSchema'>;
 
-export type DerivedEntity<S> = {
-  readonly [P in keyof S]: S[P] extends any[]
-    ? S[P][number] extends Constructor<SupabaseEntity>
-      ? InstanceType<S[P][number]>[]
-      : S[P]
-    : S[P] extends Constructor<SupabaseEntity>
-    ? InstanceType<S[P]>
-    : S[P];
-};
+export type DerivedEntity<FS, DS> = keyof DS extends keyof FS
+  ? {
+      readonly [P in keyof DS]: DS[P] extends any[]
+        ? DS[P][number] extends Constructor<SupabaseEntity>
+          ? InstanceType<DS[P][number]>[]
+          : FS[P]
+        : DS[P] extends Constructor<SupabaseEntity>
+        ? InstanceType<DS[P]>
+        : FS[P];
+    }
+  : never;
 
 export type Attributes<
   T,
@@ -79,9 +81,7 @@ export abstract class SupabaseEntity extends Entity {
   static derive<
     T extends DerivableEntityClass,
     S extends Partial<T['fullSchema']>,
-    E = keyof S extends keyof T['fullSchema']
-      ? DerivedEntity<Pick<T['fullSchema'], keyof S>>
-      : never
+    E = DerivedEntity<T['fullSchema'], S>
   >(this: T, derivedSchema: S) {
     const fields = {} as any;
     const schema = {} as any;
