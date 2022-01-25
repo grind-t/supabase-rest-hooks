@@ -86,6 +86,13 @@ test('get columns with different case', () => {
   expect(actual).toBe(expected);
 });
 
+test('get attributes', () => {
+  const todo = Todo.fromJS();
+  const user = User.fromJS({ todos: [todo] });
+  expect(todo.getAttributes()).toEqual({ id: 0, userId: 0 });
+  expect(user.getAttributes()).toEqual({ id: 0 });
+});
+
 test('list endpoint', async () => {
   const renderHook = makeRenderRestHook(makeCacheProvider);
   const { result, waitForNextUpdate } = renderHook(() =>

@@ -15,24 +15,30 @@ export type DerivedEntity<S> = {
     : S[P];
 };
 
-export type Attributes<S> = Pick<
-  S,
+export type Attributes<
+  T,
+  E extends SupabaseEntity | Constructor<SupabaseEntity>
+> = Pick<
+  T,
   {
-    [P in keyof S]: S[P] extends any[]
-      ? S[P][number] extends Constructor<SupabaseEntity>
+    [P in keyof T]: T[P] extends any[]
+      ? // eslint-disable-next-line @typescript-eslint/ban-types
+        T[P][number] extends E | Function
         ? never
         : P
-      : S[P] extends Constructor<SupabaseEntity>
+      : // eslint-disable-next-line @typescript-eslint/ban-types
+      T[P] extends E | Function
       ? never
       : P;
-  }[keyof S]
+  }[keyof T]
 >;
 
 export type Insert<T extends DerivableEntityClass> = Attributes<
-  T['fullSchema']
+  T['fullSchema'],
+  Constructor<SupabaseEntity>
 >;
 
-export type Update<T extends typeof SupabaseEntity> = Partial<Insert<T>>;
+export type Update<T extends DerivableEntityClass> = Partial<Insert<T>>;
 
 export function isSupabaseEntity(value: any): value is typeof SupabaseEntity {
   return value !== undefined && value.getColumns !== undefined;
@@ -42,6 +48,16 @@ export abstract class SupabaseEntity extends Entity {
   static client: SupabaseClient;
   static table: string;
   static fullSchema: { [k: string]: any };
+
+  getAttributes<T>(this: T): Attributes<T, SupabaseEntity> {
+    const attributes = {} as any;
+    for (const [key, value] of Object.entries(this)) {
+      if (Array.isArray(value) && value[0] instanceof SupabaseEntity) continue;
+      if (value instanceof SupabaseEntity) continue;
+      attributes[key] = value;
+    }
+    return attributes;
+  }
 
   static get key(): string {
     return this.table;
