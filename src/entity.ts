@@ -1,6 +1,5 @@
 import { Constructor } from './utils';
 import { Entity, isEntity } from '@rest-hooks/endpoint';
-import { SupabaseClient } from '@supabase/supabase-js';
 
 export type DerivableEntityClass = Constructor<SupabaseEntity> &
   Pick<typeof SupabaseEntity, 'fullSchema'>;
@@ -53,7 +52,6 @@ export function isSupabaseEntity(value: any): value is typeof SupabaseEntity {
 }
 
 export abstract class SupabaseEntity extends Entity {
-  static client: SupabaseClient;
   static table: string;
   static fullSchema: { [k: string]: any };
 

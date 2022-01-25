@@ -6,7 +6,7 @@ import { Endpoint } from '@rest-hooks/endpoint';
 import { makeRenderRestHook, makeCacheProvider } from '@rest-hooks/test';
 import { createClient } from '@supabase/supabase-js';
 
-SupabaseEntity.client = createClient(
+const supabase = createClient(
   'https://byyvykplykpbjpnefvke.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQyNDM3NjIwLCJleHAiOjE5NTgwMTM2MjB9.QADxCWc94qM5covHkYAg5yDuC7R3JrssIaZLMCxgBGc'
 );
@@ -57,7 +57,7 @@ class User extends UserEntity.derive({
 }) {
   static select = new Endpoint(
     async () => {
-      const { data, error } = await this.client
+      const { data, error } = await supabase
         .from(this.table)
         .select(this.getColumns(snakeCase));
       if (error) throw new Error(error.message);

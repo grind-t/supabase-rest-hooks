@@ -28,8 +28,7 @@
   },
   "homepage": "https://github.com/grind-t/supabase-rest-hooks#readme",
   "peerDependencies": {
-    "@rest-hooks/endpoint": "^2.0.0",
-    "@supabase/supabase-js": "^1.0.0"
+    "@rest-hooks/endpoint": "^2.0.0"
   },
   "devDependencies": {
     "@rest-hooks/core": "^3.0.2",
