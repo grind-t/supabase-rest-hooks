@@ -13,7 +13,7 @@ export type DerivedEntity<S> = {
     : S[P] extends Constructor<SupabaseEntity>
     ? InstanceType<S[P]>
     : S[P];
-} & SupabaseEntity;
+};
 
 export type Attributes<S> = Pick<
   S,
