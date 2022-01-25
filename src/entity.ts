@@ -80,8 +80,7 @@ export abstract class SupabaseEntity extends Entity {
 
   static derive<
     T extends DerivableEntityClass,
-    S extends Partial<T['fullSchema']>,
-    E = DerivedEntity<T['fullSchema'], S>
+    S extends Partial<T['fullSchema']>
   >(this: T, derivedSchema: S) {
     const fields = {} as any;
     const schema = {} as any;
@@ -109,8 +108,8 @@ export abstract class SupabaseEntity extends Entity {
     };
 
     return derivedClass as {
-      new (...args: any[]): E;
-      prototype: E;
+      new (...args: any[]): DerivedEntity<T['fullSchema'], S>;
+      prototype: DerivedEntity<T['fullSchema'], S>;
     } & typeof derivedClass;
   }
 }
