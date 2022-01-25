@@ -1,4 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+export type Constructor<T> =
+  | (new (...args: any[]) => T)
+  | (abstract new (...args: any[]) => T);
 
 export function camelCase(snakeCase: string): string {
   const regex = /[_][a-z]/gi;
@@ -28,23 +30,3 @@ export function camelKeys(value: any): any {
 export function snakeKeys(value: any): any {
   return mapKeys(value, snakeCase);
 }
-
-/*export type DeepPartial<T> = T extends object
-  ? {
-      [P in keyof T]?: DeepPartial<T[P]>;
-    }
-  : T;
-
-type DeepSchema<T extends typeof SupabaseEntity> = {
-  [P in keyof InstanceType<T>]: InstanceType<T>[P];
-} & {
-  [P in keyof T['schema']]: DeepSchema<
-    T['schema'][P] extends any[]
-      ? T['schema'][P][number] extends typeof SupabaseEntity
-        ? T['schema'][P][number]
-        : never
-      : T['schema'][P] extends typeof SupabaseEntity
-      ? T['schema'][P]
-      : never
-  >;
-};*/

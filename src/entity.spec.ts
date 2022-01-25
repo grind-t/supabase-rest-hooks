@@ -1,4 +1,4 @@
-import { SupabaseEntity } from './entity';
+import { isSupabaseEntity, SupabaseEntity } from './entity';
 import { snakeCase } from './utils';
 import { test, expect } from '@jest/globals';
 import { useResource } from '@rest-hooks/core';
@@ -11,32 +11,51 @@ SupabaseEntity.client = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQyNDM3NjIwLCJleHAiOjE5NTgwMTM2MjB9.QADxCWc94qM5covHkYAg5yDuC7R3JrssIaZLMCxgBGc'
 );
 
-class TodoEntity extends SupabaseEntity {
-  readonly id: number = 0;
-  readonly title: string = '';
-  readonly completed: boolean = false;
-  readonly userId: number = 0;
+abstract class TodoEntity extends SupabaseEntity {
+  abstract id: number;
 
   pk() {
     return `${this.id}`;
   }
 
   static table = 'todos';
+
+  static fullSchema: {
+    id: number;
+    title: string;
+    completed: boolean;
+    userId: number;
+    user: typeof UserEntity;
+  };
 }
 
-class UserEntity extends SupabaseEntity {
-  readonly id = 0;
-  readonly name = '';
-  readonly todos: TodoEntity[] = [];
+abstract class UserEntity extends SupabaseEntity {
+  abstract id: number;
 
   pk() {
     return `${this.id}`;
   }
 
   static table = 'users';
-  static schema = { todos: [TodoEntity] };
 
-  static list = new Endpoint(
+  static fullSchema: {
+    id: number;
+    name: string;
+    todos: typeof TodoEntity[];
+  };
+}
+
+class Todo extends TodoEntity.derive({
+  id: 0,
+  userId: 0,
+  user: UserEntity.derive({ id: 0 }),
+}) {}
+
+class User extends UserEntity.derive({
+  id: 0,
+  todos: [Todo],
+}) {
+  static select = new Endpoint(
     async () => {
       const { data, error } = await this.client
         .from(this.table)
@@ -48,22 +67,29 @@ class UserEntity extends SupabaseEntity {
   );
 }
 
+test('derive entity', () => {
+  expect(Todo.fromJS()).toEqual({ id: 0, userId: 0, user: { id: 0 } });
+  expect(User.fromJS()).toEqual({ id: 0, todos: [] });
+  expect(isSupabaseEntity(Todo.schema.user)).toBe(true);
+  expect(isSupabaseEntity(User.schema.todos[0])).toBe(true);
+});
+
 test('get all columns', () => {
-  const actual = UserEntity.getColumns();
-  const expected = 'id,name,todos:todos(id,title,completed,userId)';
+  const actual = User.getColumns();
+  const expected = 'id,todos:todos(id,userId,user:users(id))';
   expect(actual).toBe(expected);
 });
 
 test('get columns with different case', () => {
-  const actual = TodoEntity.getColumns(snakeCase);
-  const expected = 'id:id,title:title,completed:completed,userId:user_id';
+  const actual = Todo.getColumns(snakeCase);
+  const expected = 'id:id,userId:user_id,user:users(id:id)';
   expect(actual).toBe(expected);
 });
 
 test('list endpoint', async () => {
   const renderHook = makeRenderRestHook(makeCacheProvider);
   const { result, waitForNextUpdate } = renderHook(() =>
-    useResource(UserEntity.list, {})
+    useResource(User.select, {})
   );
   await waitForNextUpdate();
   expect(result.current.length).toBeGreaterThan(0);
