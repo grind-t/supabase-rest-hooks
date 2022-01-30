@@ -1,6 +1,15 @@
-export type Constructor<T> =
-  | (new (...args: any[]) => T)
-  | (abstract new (...args: any[]) => T);
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type AnyObject = { [k: string]: unknown };
+
+export function pick<T extends AnyObject, K extends (keyof T)[]>(
+  obj: T,
+  keys: K
+): Pick<T, K[number]> {
+  return keys.reduce((result, key) => {
+    result[key] = obj[key];
+    return result;
+  }, {} as any);
+}
 
 export function camelCase(snakeCase: string): string {
   const regex = /[_][a-z]/gi;

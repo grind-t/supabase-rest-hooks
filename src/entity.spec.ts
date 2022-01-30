@@ -1,5 +1,6 @@
-import { isSupabaseEntity, SupabaseEntity } from './entity';
-import { snakeCase } from './utils';
+/* eslint-disable @typescript-eslint/no-empty-interface */
+import { SupabaseEntity, EntityData, getColumns } from './entity';
+import { pick, snakeCase } from './utils';
 import { test, expect } from '@jest/globals';
 import { useResource } from '@rest-hooks/core';
 import { Endpoint } from '@rest-hooks/endpoint';
@@ -11,92 +12,89 @@ const supabase = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQyNDM3NjIwLCJleHAiOjE5NTgwMTM2MjB9.QADxCWc94qM5covHkYAg5yDuC7R3JrssIaZLMCxgBGc'
 );
 
-abstract class TodoEntity extends SupabaseEntity {
-  abstract id: number;
+class TodoEntity extends SupabaseEntity {
+  id!: number;
 
   pk() {
     return `${this.id}`;
   }
 
   static table = 'todos';
-
-  static fullSchema: {
-    id: number;
-    title: string;
-    completed: boolean;
-    userId: number;
-    user: typeof UserEntity;
-  };
 }
 
-abstract class UserEntity extends SupabaseEntity {
-  abstract id: number;
+class UserEntity extends SupabaseEntity {
+  id!: number;
 
   pk() {
     return `${this.id}`;
   }
 
   static table = 'users';
+}
 
-  static fullSchema: {
-    id: number;
-    name: string;
-    todos: typeof TodoEntity[];
+const todoAttributes = {
+  id: 0,
+  userId: 0,
+  title: '',
+  completed: false,
+};
+
+const userAttributes = {
+  id: 0,
+  name: '',
+};
+
+class Todo extends TodoEntity {
+  static attributes = pick(todoAttributes, ['id', 'userId']);
+  static schema = {
+    user: class extends UserEntity {
+      static attributes = pick(userAttributes, ['id']);
+    },
   };
 }
 
-class Todo extends TodoEntity.derive({
-  id: 0,
-  userId: 0,
-  user: UserEntity.derive({ id: 0 }),
-}) {}
+type TodoData = EntityData<typeof Todo>;
 
-class User extends UserEntity.derive({
-  id: 0,
-  todos: [Todo],
-}) {
-  static select = new Endpoint(
-    async () => {
-      const { data, error } = await supabase
-        .from(this.table)
-        .select(this.getColumns(snakeCase));
-      if (error) throw new Error(error.message);
-      return data;
-    },
-    { schema: [this] }
-  );
+interface Todo extends TodoData {}
+
+class User extends UserEntity {
+  static attributes = pick(userAttributes, ['id']);
+  static schema = {
+    todos: [Todo],
+  };
 }
 
-test('derive entity', () => {
-  expect(Todo.fromJS()).toEqual({ id: 0, userId: 0, user: { id: 0 } });
-  expect(User.fromJS()).toEqual({ id: 0, todos: [] });
-  expect(isSupabaseEntity(Todo.schema.user)).toBe(true);
-  expect(isSupabaseEntity(User.schema.todos[0])).toBe(true);
-});
+type UserData = EntityData<typeof User>;
+
+interface User extends UserData {}
+
+const getUser = new Endpoint(
+  async () => {
+    const { data, error } = await supabase
+      .from<UserData>(User.table)
+      .select(getColumns(User, snakeCase));
+    if (error) throw new Error(error.message);
+    return data;
+  },
+  { schema: [User] }
+);
 
 test('get all columns', () => {
-  const actual = User.getColumns();
+  const actual = getColumns(User);
   const expected = 'id,todos:todos(id,userId,user:users(id))';
   expect(actual).toBe(expected);
 });
 
 test('get columns with different case', () => {
-  const actual = Todo.getColumns(snakeCase);
+  const actual = getColumns(Todo, snakeCase);
   const expected = 'id:id,userId:user_id,user:users(id:id)';
   expect(actual).toBe(expected);
-});
-
-test('get attributes', () => {
-  const todo = Todo.fromJS();
-  const user = User.fromJS({ todos: [todo] });
-  expect(todo.getAttributes()).toEqual({ id: 0, userId: 0 });
-  expect(user.getAttributes()).toEqual({ id: 0 });
 });
 
 test('list endpoint', async () => {
   const renderHook = makeRenderRestHook(makeCacheProvider);
   const { result, waitForNextUpdate } = renderHook(() =>
-    useResource(User.select, {})
+    useResource(getUser, {})
   );
   await waitForNextUpdate();
   expect(result.current.length).toBeGreaterThan(0);

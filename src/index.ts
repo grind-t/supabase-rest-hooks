@@ -1,2 +1,2 @@
-export { SupabaseEntity, Insert, Update, Attributes } from './entity';
-export { snakeCase, camelCase, snakeKeys, camelKeys } from './utils';
+export { SupabaseEntity, EntityData, getColumns } from './entity';
+export { pick, snakeCase, camelCase, snakeKeys, camelKeys } from './utils';

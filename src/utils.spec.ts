@@ -1,5 +1,9 @@
-import { camelCase, camelKeys, snakeCase, snakeKeys } from './utils';
+import { pick, camelCase, camelKeys, snakeCase, snakeKeys } from './utils';
 import { test, expect } from '@jest/globals';
+
+test('pick', () => {
+  expect(pick({ a: 0, b: 1, c: 2 }, ['a', 'b'])).toEqual({ a: 0, b: 1 });
+});
 
 test('case conversion', () => {
   const snake = ['simple', 'really_long_and_complex'];
