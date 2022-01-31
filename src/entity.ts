@@ -5,13 +5,19 @@ export type EntitySchema = {
   [k: string]: typeof SupabaseEntity | typeof SupabaseEntity[];
 };
 
-export type EntityData<E extends typeof SupabaseEntity> = E['attributes'] & {
-  [P in keyof E['schema']]: E['schema'][P] extends typeof SupabaseEntity
-    ? EntityData<E['schema'][P]>
-    : E['schema'][P] extends typeof SupabaseEntity[]
-    ? EntityData<E['schema'][P][number]>[]
+type SchemaData<S extends EntitySchema> = {
+  [P in keyof S]: S[P] extends typeof SupabaseEntity
+    ? EntityData<S[P]>
+    : S[P] extends typeof SupabaseEntity[]
+    ? EntityData<S[P][number]>[]
     : never;
 };
+
+export type EntityData<
+  E extends typeof SupabaseEntity,
+  AD = E['attributes'],
+  SD = SchemaData<E['schema']>
+> = SD extends { [k: string]: never } ? AD : AD & SD;
 
 export abstract class SupabaseEntity extends Entity {
   static table: string;
